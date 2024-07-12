@@ -3,17 +3,12 @@
 
 (in-package :sdl2-ttf)
 
-(cffi:defcstruct (sdl-color)
-  (r :uint8)
-  (g :uint8)
-  (b :uint8)
-  (a :uint8))
-
 (defun create-sdl-color-list (red green blue alpha)
-  `(r ,red
-    g ,green
-    b ,blue
-    a ,alpha))
+  (logior
+   (ash red 0)
+   (ash green 8)
+   (ash blue 16)
+   (ash alpha 24)))
 
 (defmacro define-render-function (style encoding)
   (let* ((foreign-function-name (format 'nil "TTF_Render~a_~a" encoding style))
@@ -21,7 +16,7 @@
          (low-level-lisp-name (function-symbol "%sdl-" wrapper-function-name)))
     `(define-function ,foreign-function-name ,wrapper-function-name ,low-level-lisp-name
          :pointer
-         ((font :pointer) (text :string) (color (:struct sdl-color)))
+         ((font :pointer) (text :string) (color :unsigned-int))
          (font text red green blue alpha)
        (autocollect (ptr)
            ;;We need to wrap this manually since we are providing the function ourselves
@@ -43,7 +38,7 @@
          (low-level-lisp-name (function-symbol "%sdl-" wrapper-function-name)))
     `(define-function ,foreign-function-name ,wrapper-function-name ,low-level-lisp-name
          :pointer
-         ((font :pointer) (text :string) (fg (:struct sdl-color)) (bg (:struct sdl-color)))
+         ((font :pointer) (text :string) (fg :unsigned-int) (bg :unsigned-int))
          (font text fg-red fg-green fg-blue fg-alpha bg-red bg-green bg-blue bg-alpha)
        (autocollect (ptr)
            (check-null (sdl2-ffi::make-sdl-surface
